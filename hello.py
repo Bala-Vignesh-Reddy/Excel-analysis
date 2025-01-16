@@ -6,6 +6,7 @@ from io import BytesIO
 import google.generativeai as gemini
 from dotenv import load_dotenv
 import os
+import time
 load_dotenv()
 
 gemini.configure(api_key=os.getenv('GEMINI_API_KEY'))
@@ -56,10 +57,17 @@ def pdf_extraction(url):
     #     print(f"Error processing {url}: {e}")
     #     return "error processing pdf"
     
+lst = []
 def query_gemini(text, user_prompt):
     try:
         combined_input = f"{text}\n\n{user_prompt} Do not provide any other information"
+        
+        start_time = time.time()
         response = model.generate_content(combined_input)
+        end_time = time.time()
+        processing_time = end_time - start_time
+        lst.append(processing_time)
+        print(f"processing time: {processing_time:.2f} seconds")
 
         if not response.text.strip() or "not found" in response.text.lower():
             return None
@@ -94,7 +102,8 @@ def main():
         # df[user_prompt] = df['resumelink'].apply(lambda x: pdf_extraction(x, target_keyword))
         df[user_prompt] = df['resumelink'].apply(process_row)
         df.to_excel('output.xlsx', index=False)
-        print(f"Processing complete.. results saved.. ")
+        print(f"\nAverage processing time: {sum(lst)/len(lst)}")
+        print(f"\nProcessing complete.. results saved.. ")
     except FileNotFoundError:
         print("excel file not found")
     except Exception as e:
